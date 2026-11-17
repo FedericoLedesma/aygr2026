@@ -1604,6 +1604,254 @@ const ALICIA=[
 ["8. 1º pública de Beto, 2º privada de Alicia",[1,1,1,0]]
 ];
 
+/* ======================= AMPLIACIÓN POR PARCIALES ANTERIORES ======================= */
+/* addSec: agrega un tema de teoría al final del módulo, con sus preguntas de control */
+function addSec(id,sec){const m=M.find(x=>x.id===id);const keys=[];
+  (sec.mcq||[]).forEach(q=>{m.mcq.push(q);keys.push("m"+(m.mcq.length-1))});
+  (sec.vf||[]).forEach(q=>{m.vf.push(q);keys.push("v"+(m.vf.length-1))});
+  (sec.fill||[]).forEach(q=>{m.fill.push(q);keys.push("f"+(m.fill.length-1))});
+  m.teo.push({h:sec.h,b:sec.b});m.ctl.push(keys);
+  (sec.dev||[]).forEach(d=>m.dev.push(d));(sec.order||[]).forEach(o=>m.order.push(o));(sec.match||[]).forEach(o=>m.match.push(o))}
+
+/* Preguntas de desarrollo de parciales anteriores (se usan en los módulos y en la pestaña Parciales anteriores) */
+const PD={
+servicios:{ex:"2º parcial 2015 · 1",q:"a) Describí brevemente los servicios de seguridad básicos. b) Elegí uno y detallalo. c) Describí una forma de implementación concreta que permita proveer dicho servicio.",
+ pts:["Confidencialidad: solo los autorizados leen","Integridad: llega sin modificaciones","Disponibilidad: accesible cuando se necesita","Autenticación: el emisor es quien dice ser","No repudio: no se puede negar haber enviado o recibido","Control de acceso: quién accede a qué y cómo","Detalle de uno (mecanismos que usa, ataques que lo vulneran)","Implementación concreta (p. ej. HTTPS con TLS y AES-GCM, o firma con GnuPG)"],
+ modelo:"a) Según X.800: <b>confidencialidad</b> (solo las partes autorizadas leen la información), <b>integridad</b> (llega sin modificaciones), <b>disponibilidad</b> (el servicio está accesible para los autorizados), <b>autenticación</b> (la identidad del emisor no es falsa), <b>no repudio</b> (emisor o receptor no pueden negar haber enviado o recibido) y <b>control de acceso</b> (quién accede a qué recursos y cómo).<br>b) <b>Confidencialidad:</b> la vulnera la interceptación, un ataque pasivo difícil de detectar, por eso se previene. Se basa en el cifrado: simétrico (AES, ChaCha20) para los datos, porque es rápido, y asimétrico o Diffie-Hellman para acordar la clave de sesión.<br>c) <b>HTTPS con TLS:</b> el servidor tiene un certificado X.509 firmado por una CA; en el handshake se acuerda con ECDHE una clave de sesión y el Record Protocol cifra cada registro con AES-GCM. Quien capture el tráfico solo ve datos cifrados. (Otra opción: cifrar un archivo con la clave pública del destinatario usando GnuPG)."},
+ipsectls:{ex:"2º parcial 2015 · 2",q:"Existen diversos protocolos estándar orientados a brindar servicios de seguridad a la transmisión de mensajes por una red no segura, como IPsec y TLS. Realizá una comparación.",
+ pts:["Capa: IPsec en red, TLS en transporte","IPsec protege todo el tráfico IP sin cambiar las aplicaciones; TLS cada aplicación debe usarlo","IPsec en el kernel; TLS en bibliotecas de la aplicación","Ambos: confidencialidad, integridad, autenticación, anti-replay","Negociación: IKE + SA vs handshake + suites","Transporte: ESP/AH (proto 50/51), IKE UDP 500 vs sobre TCP (DTLS en UDP)","NAT: AH no atraviesa, ESP con NAT-T; TLS sin problema","Usos: VPN sitio a sitio vs HTTPS, correo, VPN SSL"],
+ modelo:"<div class='tbl'><table><tr><th></th><th>IPsec</th><th>TLS</th></tr><tr><td>Capa</td><td>Red</td><td>Transporte (sobre TCP; DTLS sobre UDP)</td></tr><tr><td>Qué protege</td><td>Todo el tráfico IP entre hosts o redes, transparente a las aplicaciones</td><td>Una conexión de una aplicación que lo implementa</td></tr><tr><td>Dónde se implementa</td><td>Núcleo del SO o gateway</td><td>Biblioteca de la aplicación (OpenSSL)</td></tr><tr><td>Componentes</td><td>AH, ESP, SA/SADB/SPD, IKE</td><td>Record, Handshake, Alert, CCS</td></tr><tr><td>Negociación</td><td>IKE (UDP 500) con X.509 o PSK y Diffie-Hellman</td><td>Handshake con certificados X.509 y (EC)DHE</td></tr><tr><td>Modos</td><td>Transporte y túnel</td><td>—</td></tr><tr><td>NAT</td><td>AH no lo atraviesa; ESP con NAT-T (UDP 4500)</td><td>Sin problemas</td></tr><tr><td>Usos típicos</td><td>VPN sitio a sitio y acceso remoto</td><td>HTTPS, correo seguro, VPN SSL (OpenVPN)</td></tr></table></div>Los dos dan confidencialidad, integridad, autenticación del origen y protección contra repetición, y usan simétrico para los datos y asimétrico para autenticar y acordar claves. IPsec protege más tráfico sin tocar las aplicaciones, pero es más complejo de configurar; TLS es más simple y granular, pero cada aplicación debe incorporarlo."},
+fwidsips:{ex:"2º parcial 2015 · 3",q:"a) ¿Cuál es la funcionalidad de un firewall, un IDS y un IPS? b) ¿Dónde se implementan? c) ¿En qué se diferencian?",
+ pts:["Firewall: controla el tráfico entre redes según una política y reglas (ACL)","IDS: detecta ataques por firmas o anomalías y alerta","IPS: detecta y bloquea en línea (IDS + firewall)","Firewall: borde, host, personal, WAF, DMZ","IDS: escucha una copia del tráfico (puerto espejo / tap) o en el host (HIDS)","IPS: en línea, en el camino del tráfico","Diferencia: el firewall decide por reglas de acceso; el IDS no previene; el IPS sí actúa"],
+ modelo:"a) El <b>firewall</b> es la barrera por la que pasa todo el tráfico entre redes; según su política y sus reglas (ACL) permite o deniega, registra la actividad y puede hacer NAT o terminar VPN. El <b>IDS</b> analiza el tráfico o los eventos buscando ataques por <b>firmas</b> conocidas o <b>anomalías</b> (picos, volumen, protocolos raros) y genera alertas, incluso de ataques internos. El <b>IPS</b> hace lo mismo pero además <b>bloquea</b>: descarta paquetes, bloquea la IP de origen o resetea la conexión.<br>b) El firewall, en el borde de la red (separando LAN, DMZ e Internet), en cada host, como firewall personal o como WAF delante del servidor web. El IDS, conectado a un puerto espejo o tap para ver una copia del tráfico (NIDS) o instalado en el servidor (HIDS). El IPS, en línea, en el camino del tráfico, a menudo integrado al firewall o a un UTM.<br>c) El firewall decide por reglas de acceso (origen, destino, puertos, estado); el IDS entiende patrones de ataque pero solo avisa, no previene; el IPS combina las dos cosas y actúa. El IDS no afecta el tráfico si falla; un IPS en línea que falla puede cortar el servicio."},
+hipervisores:{ex:"2º parcial 2015 · 4",q:"a) ¿Cuál es la forma de operación de los hipervisores Tipo I y Tipo II puros? b) Compará ventajas y desventajas de cada enfoque.",
+ pts:["Tipo I: corre directamente sobre el hardware (bare-metal)","Tipo I controla el hardware y planifica las VM","Tipo II: corre como aplicación sobre un SO anfitrión","Tipo II usa los drivers y servicios del SO anfitrión","Ventajas tipo I: rendimiento, aislamiento, seguridad, producción","Desventajas tipo I: compatibilidad de hardware, gestión remota, costo","Ventajas tipo II: fácil de instalar, escritorio, pruebas","Desventajas tipo II: overhead y dependencia del SO anfitrión"],
+ modelo:"a) El <b>tipo I (nativo o bare-metal)</b> se ejecuta directamente sobre el hardware, en el modo más privilegiado: él mismo administra CPU, memoria y dispositivos y los reparte entre las máquinas virtuales (ESXi, Xen, Hyper-V, KVM). El <b>tipo II (hosted)</b> es una aplicación más sobre un sistema operativo anfitrión: las VM son procesos y el acceso al hardware pasa por los drivers del anfitrión (VirtualBox, VMware Workstation).<br>b) <b>Tipo I</b>: mayor rendimiento (sin capa intermedia), mejor aislamiento y seguridad (menos superficie de ataque), ideal para servidores y datacenters; a cambio soporta menos hardware, requiere una máquina dedicada y se gestiona desde otra consola, y suele ser más costoso. <b>Tipo II</b>: se instala como cualquier programa y aprovecha los drivers del anfitrión, ideal para escritorio, pruebas y desarrollo; a cambio tiene más overhead, depende del SO anfitrión (si este falla o se compromete, caen las VM) y rinde menos."},
+popek:{ex:"2º parcial 2015 · 5",q:"a) Popek y Goldberg describen formalmente una característica necesaria para implementar un Monitor de Máquina Virtual. ¿Cuál es esa propiedad? b) ¿Cómo ha sido posible implementar virtualización en arquitecturas que no cumplían con esa propiedad?",
+ pts:["Instrucciones sensibles ⊆ instrucciones privilegiadas","Así toda instrucción sensible genera una trampa en modo usuario (trap-and-emulate)","Propiedades del VMM: equivalencia, control de recursos, eficiencia","x86 no la cumplía: instrucciones sensibles no privilegiadas","Traducción binaria (VMware)","Paravirtualización: SO modificado con hypercalls (Xen)","Soporte de hardware: Intel VT-x / AMD-V"],
+ modelo:"a) Popek y Goldberg (1974) demostraron que se puede construir un VMM si el conjunto de <b>instrucciones sensibles</b> (las que leen o cambian el estado privilegiado de la máquina o dependen de él) es un <b>subconjunto de las instrucciones privilegiadas</b> (las que generan una trampa si se ejecutan en modo usuario). Así el SO invitado corre en modo usuario y cada instrucción sensible produce una trampa que el VMM <b>atrapa y emula</b> (trap-and-emulate). El VMM debe cumplir <b>equivalencia</b> (el programa se comporta igual que en la máquina real), <b>control de recursos</b> (el VMM controla todo el hardware) y <b>eficiencia</b> (la mayoría de las instrucciones corren directo en la CPU).<br>b) La arquitectura x86 tenía instrucciones sensibles no privilegiadas (como POPF o SGDT) que no generaban trampa. Se resolvió con: <b>traducción binaria</b> (VMware: reescribe al vuelo el código del kernel invitado y reemplaza esas instrucciones), <b>paravirtualización</b> (Xen: se modifica el SO invitado para que llame al hipervisor con hypercalls) y <b>virtualización asistida por hardware</b> (Intel VT-x y AMD-V agregan un modo de ejecución para el hipervisor y hacen que esas instrucciones generen trampa)."},
+tiers:{ex:"2º parcial 2015 · 6",q:"De acuerdo a los requerimientos funcionales, ¿cuáles son las diferencias entre un datacenter calificado Tier II y uno Tier III?",
+ pts:["Tier II: componentes de capacidad redundantes (N+1)","Tier II: un solo camino de distribución de energía y refrigeración","Tier II: el mantenimiento obliga a apagar","Tier III: mantenible concurrentemente","Tier III: múltiples caminos de distribución (uno activo) y componentes N+1","Disponibilidad: ~99,741 % (≈22 h/año) vs ~99,982 % (≈1,6 h/año)"],
+ modelo:"Según la clasificación del Uptime Institute: un <b>Tier II</b> (componentes redundantes) agrega redundancia en los componentes de capacidad (UPS, generadores, equipos de frío en N+1) pero tiene <b>un único camino de distribución</b> de energía y refrigeración: una falla en ese camino o cualquier mantenimiento sobre él obliga a apagar. Disponibilidad esperada ≈ 99,741 % (unas 22 h de caída al año). Un <b>Tier III</b> es <b>mantenible concurrentemente</b>: además de componentes N+1 tiene <b>múltiples caminos de distribución</b> (uno activo y otro alternativo), de modo que cualquier componente o camino puede mantenerse o reemplazarse sin detener la operación; los equipos IT tienen doble fuente. Disponibilidad ≈ 99,982 % (≈ 1,6 h al año). Un Tier IV agrega tolerancia a fallas, con caminos activos simultáneos."},
+codec:{ex:"2º parcial 2015 · 7",q:"¿Cuáles son los parámetros fundamentales de un códec? Relacionalos con su utilización para transmitir voz sobre una red de datos no fiable como Internet.",
+ pts:["Frecuencia de muestreo (Nyquist, 8 kHz en voz)","Resolución / bits por muestra","Tasa de bits (bitrate) y compresión","Tamaño de trama / paquetización (ms)","Retardo algorítmico y complejidad (CPU)","Calidad (MOS) y robustez ante pérdidas (PLC, FEC)","Relación con Internet: ancho de banda, latencia, jitter y pérdidas"],
+ modelo:"Parámetros: <b>frecuencia de muestreo</b> (al menos el doble de la frecuencia máxima por Nyquist: 8 kHz para voz telefónica, 16 kHz en banda ancha); <b>resolución</b> (bits por muestra); <b>tasa de bits</b> resultante y nivel de compresión (G.711 64 kbps, G.729 8 kbps, Opus 6–510 kbps); <b>tamaño de trama o paquetización</b> (por ejemplo 20 ms); <b>retardo algorítmico</b> y <b>complejidad</b> (CPU necesaria); <b>calidad</b> percibida (MOS) y <b>robustez ante pérdidas</b> (ocultamiento de pérdidas, FEC). En Internet el ancho de banda varía y hay latencia, jitter y pérdida: conviene un bitrate bajo o adaptativo, pero más compresión implica más CPU, más retardo y menos calidad; tramas chicas bajan la latencia pero suben el overhead (62 bytes de encabezado por paquete); si se pierde un paquete con mucha voz se nota más. Por eso se usan códecs adaptativos y robustos como Opus o iLBC, jitter buffer en el receptor y QoS donde se pueda."},
+sipproto:{ex:"2º parcial 2015 · 8 · Final 2016 · 5",q:"Enumerá los protocolos de un escenario VoIP basado en SIP, indicando componentes, la interrelación entre ellos, en qué momento se utilizan y su finalidad.",
+ pts:["Componentes: UA (UAC/UAS), registrar, proxy, redirect, PBX","Al encender: DHCP (IP + opción 66), TFTP (configuración), NTP (hora), DNS","SIP REGISTER para registrarse (401 → credenciales → 200 OK)","SIP INVITE/180/200/ACK/BYE para establecer y terminar","SDP dentro de SIP para negociar códecs, IP y puertos","RTP para el audio; RTCP para estadísticas de calidad","Interrelación: SDP dice a dónde va el RTP; RTCP acompaña al RTP"],
+ modelo:"<b>Componentes:</b> los User Agents (teléfonos o softphones, que actúan como UAC al pedir y UAS al responder), y en el servidor (PBX como Asterisk) los roles de registrar, proxy y redirect.<br><b>1. Arranque:</b> DHCP entrega IP, gateway, DNS y en la opción 66 el servidor TFTP; por TFTP el teléfono baja su configuración; NTP sincroniza la hora (logs, CDR); DNS resuelve el servidor.<br><b>2. Registro:</b> SIP REGISTER al registrar; responde 401 con un desafío; se reenvía con credenciales y se recibe 200 OK.<br><b>3. Llamada:</b> INVITE con un cuerpo <b>SDP</b> que ofrece códecs, IP y puerto; 100 Trying, 180 Ringing y 200 OK con el SDP de respuesta; ACK.<br><b>4. Conversación:</b> <b>RTP</b> sobre UDP lleva el audio (secuencia, timestamp, SSRC) a los puertos que indicó el SDP; <b>RTCP</b> (puerto siguiente) envía reportes SR y RR con pérdidas y jitter.<br><b>5. Fin:</b> BYE y 200 OK.<br>SIP solo señaliza; SDP describe la sesión; RTP y RTCP transportan y controlan el audio, directo entre teléfonos o pasando por la PBX."},
+openflow:{ex:"2º parcial 2015 · 9",q:"Describí un dispositivo de red construido acorde al estándar “OpenFlow Switch Specification”, indicando componentes básicos, escenario de implementación y forma de trabajo.",
+ pts:["Tablas de flujo (y tabla de grupos)","Canal seguro (OpenFlow channel) hacia el controlador, sobre TCP/TLS","Protocolo OpenFlow","Entrada de flujo: campos de match, prioridad, contadores, instrucciones/acciones, timeouts","Escenario: controlador centralizado (SDN) que programa muchos switches","Funcionamiento: match por prioridad → acciones y contadores","Table-miss: packet-in al controlador, que instala flujos (flow-mod) o responde (packet-out)"],
+ modelo:"Un switch OpenFlow separa el <b>plano de datos</b> (queda en el switch) del <b>plano de control</b> (pasa a un <b>controlador</b> externo). <b>Componentes:</b> una o más <b>tablas de flujo</b> (y una tabla de grupos), un <b>canal seguro</b> (OpenFlow channel, sobre TCP, opcionalmente TLS, puerto 6653) hacia el controlador, y el <b>protocolo OpenFlow</b> con el que el controlador agrega, modifica y borra entradas. Cada <b>entrada de flujo</b> tiene campos de coincidencia (puerto de entrada, MAC, VLAN, IP, puertos TCP/UDP…), prioridad, <b>contadores</b>, <b>instrucciones o acciones</b> (reenviar a un puerto, inundar, enviar al controlador, descartar, modificar campos) y timeouts.<br><b>Escenario:</b> una red SDN (campus, datacenter, laboratorio) donde un controlador como OpenDaylight, ONOS o Ryu tiene la vista global y programa muchos switches físicos o virtuales (Open vSwitch), con aplicaciones arriba por la API northbound.<br><b>Funcionamiento:</b> al llegar un paquete se busca la entrada de mayor prioridad que coincida; se ejecutan sus acciones y se actualizan los contadores. Si no hay coincidencia (<b>table-miss</b>), se envía al controlador (<b>packet-in</b>), que decide e instala un flujo (<b>flow-mod</b>) o devuelve el paquete (<b>packet-out</b>). Los flujos pueden instalarse de forma reactiva o proactiva."},
+stp:{ex:"2º parcial 2015 · 10",q:"¿Cuál es el propósito del Spanning Tree Protocol (STP) en redes de área local conmutadas? ¿Qué inconvenientes resuelve? ¿Por qué actualmente se desaconseja su uso?",
+ pts:["Propósito: permitir enlaces redundantes en capa 2 sin bucles","Construye un árbol: elige root bridge y bloquea puertos","Intercambio de BPDU","Resuelve: tormentas de broadcast","Resuelve: tramas duplicadas e inestabilidad de tablas MAC","Desaconsejado: convergencia lenta (30–50 s)","Desaconsejado: enlaces bloqueados que no se usan; un solo árbol","Alternativas: RSTP/MSTP, LACP, diseño en capa 3 o spine-leaf con ECMP"],
+ modelo:"<b>Propósito:</b> STP (IEEE 802.1D) permite tener enlaces redundantes entre switches sin que se formen bucles en capa 2. Los switches intercambian <b>BPDU</b>, eligen un <b>root bridge</b> (menor bridge ID), calculan el camino de menor costo y <b>bloquean</b> los puertos que cerrarían un ciclo; si un enlace activo falla, desbloquean uno alternativo.<br><b>Inconvenientes que resuelve:</b> como Ethernet no tiene TTL, un bucle genera <b>tormentas de broadcast</b> que saturan la red, <b>tramas duplicadas</b> e <b>inestabilidad de las tablas MAC</b>.<br><b>Por qué se desaconseja:</b> converge lento (30 a 50 s con los temporizadores clásicos, durante los que no hay servicio), deja <b>enlaces bloqueados sin usar</b> (se desperdicia ancho de banda redundante), usa un solo árbol que puede dar caminos subóptimos y un error de configuración o un switch mal puesto como raíz afecta a toda la red. Hoy se usan RSTP (802.1w) o MSTP, agregación de enlaces (LACP, MLAG) y diseños en capa 3 o spine-leaf con ECMP, que aprovechan todos los enlaces."},
+fcaps:{ex:"Final 2016 · 1 (tema del 1er parcial)",q:"¿Qué áreas temáticas propone la ISO para organizar la gestión de redes? Describí brevemente cada una.",
+ pts:["Fallas (Fault)","Configuración (Configuration)","Contabilidad (Accounting)","Rendimiento (Performance)","Seguridad (Security)"],
+ modelo:"El modelo <b>FCAPS</b> de ISO: <b>Fallas</b> (detectar, aislar, registrar y corregir problemas), <b>Configuración</b> (inventario, parámetros y control de cambios de los equipos), <b>Contabilidad</b> (medir el uso de recursos por usuario o área para cobrar o asignar cuotas), <b>Rendimiento</b> (medir y analizar desempeño: utilización, latencia, pérdidas, umbrales) y <b>Seguridad</b> (controlar el acceso a recursos, políticas, registros y protección)."},
+snmp:{ex:"Final 2016 · 2 (tema del 1er parcial)",q:"¿Cuál es la arquitectura de monitoreo planteada por el protocolo SNMP?",
+ pts:["Gestor (NMS / manager)","Agentes en los dispositivos","MIB con objetos identificados por OID (SMI)","Protocolo SNMP sobre UDP: 161 consultas, 162 traps","Operaciones get / set / traps (polling + notificaciones)"],
+ modelo:"Modelo gestor-agente: una <b>estación de gestión</b> (manager/NMS) consulta y configura a los <b>agentes</b> que corren en cada dispositivo gestionado. Cada agente expone una <b>MIB</b>, base de información con objetos identificados por <b>OID</b> en un árbol jerárquico, definida con SMI. Se comunican con el <b>protocolo SNMP</b> sobre UDP: el gestor hace <b>polling</b> con get/getnext/getbulk y modifica con set (puerto 161), y los agentes envían notificaciones asincrónicas o <b>traps</b> (puerto 162). Puede haber proxies para equipos que no hablan SNMP."},
+diseno:{ex:"Final 2016 · 3 (tema del 1er parcial)",q:"Durante el diseño e implementación de una red, además del requerimiento del usuario y los fundamentos teóricos del implementador, ¿qué conocimientos adicionales deben tenerse en cuenta?",
+ pts:["Objetivos y restricciones del negocio (presupuesto, plazos, personal, políticas)","Requerimientos técnicos (escalabilidad, disponibilidad, rendimiento, seguridad, gestionabilidad)","Caracterización de la red existente","Análisis de flujos de tráfico","Tecnologías, productos y estándares disponibles"],
+ modelo:"Siguiendo un enfoque top-down (Oppenheimer, McCabe): los <b>objetivos y restricciones del negocio</b> (presupuesto, plazos, personal disponible, políticas de la organización), los <b>requerimientos técnicos</b> (escalabilidad, disponibilidad, rendimiento, seguridad, gestionabilidad, usabilidad), la <b>red existente</b> (topología, equipos, cableado, rendimiento actual), los <b>flujos de tráfico</b> (quién habla con quién, cuánto y con qué requisitos) y las <b>tecnologías, productos y normas</b> disponibles en el mercado. <span class='note'>Es tema del primer parcial: contrastalo con tus apuntes.</span>"},
+qos:{ex:"Final 2016 · 4",q:"Mencioná al menos 3 formas de dar soporte a los requerimientos de calidad de servicio, describiendo a qué nivel y cómo se implementan. ¿Son excluyentes?",
+ pts:["Capa 2: prioridad 802.1p (PCP) en la etiqueta 802.1Q, VLAN de voz","Capa 3: DiffServ, marcado DSCP (EF, AF) y colas por clase en routers","IntServ / RSVP: reserva por flujo","Control de tráfico: shaping y policing con colas (tc, HTB, PRIO)","Otras: sobredimensionamiento, MPLS-TE","No son excluyentes: se combinan"],
+ modelo:"<b>1. Capa 2 – 802.1p:</b> el campo de prioridad (PCP, 3 bits) de la etiqueta 802.1Q marca las tramas (voz = 5) y los switches las atienden en colas prioritarias; suele combinarse con una VLAN de voz. <b>2. Capa 3 – DiffServ:</b> se marca el campo <b>DSCP</b> del encabezado IP en el borde (voz = EF 46) y cada router aplica un comportamiento por salto (colas de prioridad, ancho de banda garantizado por clase). <b>3. IntServ / RSVP:</b> la aplicación reserva recursos por flujo a lo largo del camino; garantiza, pero escala mal. <b>4. Control de tráfico en el equipo:</b> con disciplinas de cola (en Linux, <code>tc</code> con HTB o PRIO) se clasifica, prioriza, limita (<b>shaping</b>, que retrasa) o descarta (<b>policing</b>) tráfico. También sobredimensionar enlaces o MPLS-TE. <b>No son excluyentes:</b> se combinan; por ejemplo, el teléfono marca 802.1p, el switch lo traduce a DSCP y el router de borde aplica colas y shaping con tc."},
+vlanvpn:{ex:"Final 2016 · 6",q:"¿Cuál es la diferencia entre VLANs y VPNs?",
+ pts:["VLAN: segmenta lógicamente una LAN en capa 2 (802.1Q, hasta 4094)","VLAN: separa dominios de broadcast dentro de la infraestructura propia","VLAN: no cifra","VPN: extiende una red privada sobre una red pública con túneles","VPN: cifrado, autenticación e integridad (IPsec, OpenVPN, WireGuard)","Se pueden combinar"],
+ modelo:"Una <b>VLAN</b> divide lógicamente una LAN física en varias redes de capa 2: cada trama lleva una etiqueta <b>802.1Q</b> (VLAN ID de 12 bits, hasta 4094) y los switches separan los <b>dominios de broadcast</b>. Funciona dentro de la infraestructura propia, sirve para segmentar (voz, datos, administración) y <b>no cifra</b>; para comunicar VLAN entre sí hace falta un router. Una <b>VPN</b> crea una red privada <b>sobre una red pública</b> (Internet) mediante <b>túneles</b>, con cifrado, autenticación e integridad (IPsec, OpenVPN, WireGuard), para unir sucursales o usuarios remotos, en capa 2 o 3. En resumen: la VLAN segmenta localmente, la VPN extiende de forma segura a distancia; pueden combinarse."},
+firma:{ex:"Final 2016 · 7",q:"Describí y esquematizá el procedimiento para implementar firmas digitales.",
+ pts:["Emisor calcula el hash del mensaje","Cifra el hash con su clave privada → firma","Envía mensaje + firma (+ certificado)","Receptor descifra la firma con la pública del emisor","Calcula el hash del mensaje recibido y compara","Servicios: integridad, autenticación, no repudio (no confidencialidad)","La pública debe estar autenticada (certificado X.509 / PKI o red de confianza)"],
+ modelo:"<pre><code>EMISOR (A)                                 RECEPTOR (B)\nmensaje ──► H() ──► hash                    mensaje ──► H() ──► hash'\n                     │                                            │\n          cifrar con privada de A                                 ▼\n                     ▼                             ¿hash' == hash ?\n                   firma ──── mensaje + firma ──► descifrar firma con\n                                                    pública de A ──► hash</code></pre>A calcula el hash del mensaje (SHA-256) y lo cifra con <b>su clave privada</b>: eso es la firma. Envía el mensaje con la firma (y normalmente su certificado). B descifra la firma con la <b>clave pública de A</b>, calcula el hash del mensaje recibido y compara: si coinciden, el mensaje no fue modificado y lo firmó quien tiene la privada de A. Da <b>integridad, autenticación y no repudio</b>, no confidencialidad. Para confiar en la pública de A hace falta un <b>certificado X.509</b> firmado por una CA (PKI) o la red de confianza de PGP. Se firma el hash y no el mensaje porque el asimétrico es lento."},
+virtobj:{ex:"Final 2016 · 8",q:"¿Cuáles son los objetivos posibles por los que se implementan técnicas de virtualización? ¿Cómo se logran?",
+ pts:["Consolidación y mejor aprovechamiento del hardware","Aislamiento y seguridad entre servicios","Alta disponibilidad: migración en vivo, snapshots, recuperación","Independencia del hardware y portabilidad (incluye SO legacy)","Pruebas y desarrollo; aprovisionamiento rápido","Ahorro de energía y espacio","Cómo: hipervisores tipo I/II, virtualización completa, paravirtualización, asistida por hardware, contenedores","Virtualización de red y almacenamiento"],
+ modelo:"<b>Objetivos:</b> consolidar servidores y aprovechar mejor el hardware (menos equipos, menos energía y espacio); aislar servicios entre sí (seguridad, fallas contenidas); alta disponibilidad y recuperación ante desastres (migración en vivo, snapshots, reinicio en otro host); independencia del hardware y portabilidad (mover una VM, mantener SO viejos); entornos de prueba y desarrollo; aprovisionamiento rápido y elasticidad (base de la nube).<br><b>Cómo:</b> con un hipervisor o VMM que reparte el hardware entre máquinas virtuales: tipo I sobre el hardware o tipo II sobre un SO; con <b>virtualización completa</b> (traducción binaria), <b>paravirtualización</b> (SO invitado modificado) o <b>asistida por hardware</b> (Intel VT-x, AMD-V); con <b>contenedores</b> que comparten el kernel (namespaces, cgroups); y extendiendo la idea a la red (VLAN, VXLAN, switches virtuales, SDN, NFV) y al almacenamiento."}
+};
+
+/* ---------- Teoría nueva por módulo ---------- */
+addSec("resiliencia",{h:"STP: propósito, problemas y por qué se desaconseja",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<p><b>STP (Spanning Tree Protocol, IEEE 802.1D)</b> permite tener <b>enlaces redundantes en capa 2</b> sin que se formen bucles.</p>
+<ol><li>Los switches intercambian <b>BPDU</b> (Bridge Protocol Data Units).</li>
+<li>Eligen un <b>root bridge</b>: el de menor <b>bridge ID</b> (prioridad + MAC).</li>
+<li>Cada switch elige su <b>root port</b> (camino de menor costo a la raíz) y en cada segmento se elige un <b>designated port</b>.</li>
+<li>Los demás puertos quedan <b>bloqueados</b>. Si un enlace activo falla, se recalcula y se habilita uno bloqueado.</li></ol>
+<div class="tbl"><table><tr><th>Problema sin STP (Ethernet no tiene TTL)</th><th>Qué pasa</th></tr>
+<tr><td>Tormenta de broadcast</td><td>Los broadcast circulan para siempre y saturan la red</td></tr>
+<tr><td>Tramas duplicadas</td><td>El destino recibe copias de la misma trama</td></tr>
+<tr><td>Inestabilidad de la tabla MAC</td><td>El switch ve la misma MAC por distintos puertos y la tabla cambia sin parar</td></tr></table></div>
+<div class="key"><b>Por qué se desaconseja hoy:</b> convergencia lenta (30 a 50 s con los temporizadores clásicos: max age 20 s + 2 × forward delay 15 s); enlaces bloqueados que no se usan (ancho de banda desperdiciado); un solo árbol con caminos subóptimos; un error (por ejemplo, un switch que se vuelve raíz) afecta a toda la red. <b>Alternativas:</b> RSTP (802.1w, converge en segundos), MSTP (un árbol por grupo de VLAN), agregación de enlaces (LACP, MLAG) y diseños en capa 3 o spine-leaf con ECMP.</div>`,
+mcq:[{q:"¿Qué problema resuelve STP?",o:["La falta de direcciones IP","Los bucles en capa 2 con enlaces redundantes","El cifrado de tramas","La congestión en capa 4"],a:1,e:"Tormentas de broadcast, tramas duplicadas e inestabilidad de la tabla MAC."},
+{q:"El root bridge de STP es el switch con:",o:["Más puertos","Mayor MAC","Menor bridge ID","Más tráfico"],a:2,e:"Bridge ID = prioridad + MAC."},
+{q:"¿Por qué se desaconseja STP clásico?",o:["Porque cifra mal","Porque converge lento y deja enlaces bloqueados sin usar","Porque no funciona con VLAN","Porque usa UDP"],a:1,e:""}],
+vf:[["Sin STP, un bucle en capa 2 puede generar una tormenta de broadcast porque Ethernet no tiene TTL.",true,""]],
+fill:[{q:"Mensajes que intercambian los switches en STP (sigla)",a:["bpdu","bpdus"],e:"BPDU."}],
+dev:[PD.stp]});
+
+addSec("voip",{h:"Parámetros fundamentales de un códec",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<div class="tbl"><table><tr><th>Parámetro</th><th>Qué es</th><th>Relación con Internet</th></tr>
+<tr><td>Frecuencia de muestreo</td><td>Muestras por segundo; Nyquist: ≥ 2 × fmax. 8 kHz para voz, 16 kHz en banda ancha</td><td>Más frecuencia, más calidad y más bits</td></tr>
+<tr><td>Resolución</td><td>Bits por muestra (8, 16…)</td><td>Más bits, más fidelidad y más ancho de banda</td></tr>
+<tr><td>Tasa de bits (bitrate)</td><td>kbps resultantes tras comprimir (G.711 64, G.729 8, Opus 6–510)</td><td>Con ancho de banda limitado o variable conviene bajo o adaptativo</td></tr>
+<tr><td>Tamaño de trama / paquetización</td><td>Cuánta voz va en cada paquete (10, 20, 30 ms)</td><td>Trama chica: menos latencia, más overhead (62 B por paquete). Grande: menos overhead, más latencia y más audio perdido por paquete</td></tr>
+<tr><td>Retardo algorítmico</td><td>Tiempo que el códec necesita para procesar (incluye lookahead)</td><td>Suma a la latencia total; para voz interactiva conviene &lt; 150 ms en un sentido</td></tr>
+<tr><td>Complejidad</td><td>CPU necesaria para codificar y decodificar</td><td>Afecta la transcodificación en la central y los dispositivos chicos</td></tr>
+<tr><td>Calidad (MOS)</td><td>Calidad percibida, de 1 a 5</td><td>Baja con compresión fuerte, pérdidas y jitter</td></tr>
+<tr><td>Robustez ante pérdidas</td><td>Ocultamiento de pérdidas (PLC), corrección de errores (FEC)</td><td>Internet pierde paquetes: iLBC y Opus están diseñados para eso</td></tr></table></div>
+<div class="key">En una red no fiable hay ancho de banda variable, latencia, jitter y pérdidas. Se elige un códec que equilibre bitrate, retardo y robustez (Opus es adaptativo), se usa <b>jitter buffer</b> en el receptor y se aplica <b>QoS</b> donde la red lo permita. Más compresión = menos ancho de banda, pero más CPU, más retardo y menos calidad.</div>`,
+mcq:[{q:"¿Cuál de estos NO es un parámetro de un códec?",o:["Frecuencia de muestreo","Tasa de bits","Tamaño de trama","Número de puerto SIP"],a:3,e:""},
+{q:"En una red con muchas pérdidas conviene un códec:",o:["Sin compresión y tramas largas","Robusto ante pérdidas, con PLC o FEC","Con el mayor retardo algorítmico posible","Que no use RTP"],a:1,e:"iLBC y Opus son buenos ejemplos."},
+{q:"Más compresión en un códec implica en general:",o:["Más ancho de banda","Menos CPU","Menos ancho de banda pero más CPU y retardo","Mejor calidad siempre"],a:2,e:""}],
+vf:[["Tramas de voz más grandes reducen el overhead pero aumentan la latencia.",true,""]],
+dev:[PD.codec,PD.sipproto]});
+
+addSec("seg1",{h:"De los servicios a la implementación (parcial 2015)",b:`<p class="tag warn">Salió en el 2º parcial 2015: describir los servicios, detallar uno e implementarlo</p>
+<div class="tbl"><table><tr><th>Servicio</th><th>Mecanismo</th><th>Implementación concreta</th></tr>
+<tr><td>Confidencialidad</td><td>Cifrado simétrico (y asimétrico para acordar la clave)</td><td>HTTPS (TLS con AES-GCM), VPN con IPsec ESP u OpenVPN, archivo cifrado con GnuPG</td></tr>
+<tr><td>Integridad</td><td>Hash, MAC/HMAC, firma digital</td><td>HMAC en cada registro TLS o paquete ESP; hash SHA-256 publicado junto a una ISO</td></tr>
+<tr><td>Autenticación</td><td>Intercambio de autenticación, certificados, firma</td><td>Certificado X.509 del servidor en TLS; claves públicas en SSH; 802.1X</td></tr>
+<tr><td>No repudio</td><td>Firma digital con clave privada</td><td>Firmar con GnuPG o firma digital con certificado (Ley 25.506)</td></tr>
+<tr><td>Control de acceso</td><td>Listas de control de acceso, autorización</td><td>Reglas de nftables, permisos de archivos, ACL en routers</td></tr>
+<tr><td>Disponibilidad</td><td>Redundancia, balanceo, filtrado</td><td>Balanceador Nginx + CARP, UPS, backups, protección anti-DDoS</td></tr></table></div>
+<div class="key">Estructura para responder: <b>a)</b> las 6 definiciones en una línea cada una; <b>b)</b> elegí uno y explicá qué lo vulnera, qué mecanismos lo dan y sus límites; <b>c)</b> un caso concreto con nombre de protocolo y algoritmo.</div>`,
+mcq:[{q:"¿Qué implementación concreta da no repudio?",o:["Un HMAC con clave compartida","Firmar el documento con la clave privada (GnuPG)","Cifrar con AES","Un balanceador"],a:1,e:"El HMAC no da no repudio porque los dos conocen la clave."}],
+dev:[PD.servicios]});
+
+addSec("seg1",{h:"Firewall, IDS e IPS: comparación (parcial 2015)",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<div class="tbl"><table><tr><th></th><th>Firewall</th><th>IDS</th><th>IPS</th></tr>
+<tr><td>Funcionalidad</td><td>Permite o deniega tráfico según una política y reglas (ACL); registra; NAT y VPN</td><td>Detecta ataques por firmas o anomalías y <b>alerta</b></td><td>Detecta y <b>bloquea</b>: descarta, bloquea IP, resetea conexión</td></tr>
+<tr><td>Dónde</td><td>Borde de red, entre LAN/DMZ/Internet; en el host; personal; WAF</td><td>Puerto espejo o tap (NIDS) o en el host (HIDS); ve una copia</td><td><b>En línea</b>, en el camino del tráfico; a menudo dentro del firewall o UTM</td></tr>
+<tr><td>Decide por</td><td>Encabezados, estado, aplicación</td><td>Patrones de ataque o comportamiento</td><td>Patrones de ataque o comportamiento</td></tr>
+<tr><td>Si falla</td><td>Corta o deja pasar según el diseño (fail-safe)</td><td>No afecta el tráfico</td><td>Puede cortar el servicio</td></tr>
+<tr><td>Ejemplos</td><td>nftables, pfSense</td><td>Snort, Suricata en modo IDS</td><td>Suricata en línea, fail2ban</td></tr></table></div>`,
+mcq:[{q:"Un IDS conectado a un puerto espejo del switch:",o:["Bloquea los ataques","Ve una copia del tráfico y alerta","Hace NAT","Termina VPN"],a:1,e:""},
+{q:"¿Qué sistema, si falla, puede cortar el servicio por estar en línea?",o:["IDS en puerto espejo","IPS","SIEM","HIDS"],a:1,e:""}],
+dev:[PD.fwidsips]});
+
+addSec("netfilter",{h:"Formas de dar soporte a la QoS (final 2016)",b:`<p class="tag warn">Salió en el final 2016</p>
+<div class="tbl"><table><tr><th>Forma</th><th>Nivel</th><th>Cómo se implementa</th></tr>
+<tr><td>802.1p</td><td>Enlace (capa 2)</td><td>Campo PCP (3 bits) de la etiqueta 802.1Q; los switches atienden por prioridad (voz = 5). Suele ir con una VLAN de voz</td></tr>
+<tr><td>DiffServ</td><td>Red (capa 3)</td><td>Se marca DSCP en el borde (voz = EF 46) y cada router aplica colas por clase</td></tr>
+<tr><td>IntServ / RSVP</td><td>Red, por flujo</td><td>Reserva de recursos a lo largo del camino; garantiza pero escala mal</td></tr>
+<tr><td>Control de tráfico (tc)</td><td>En cada equipo</td><td>Qdisc: clasificar, priorizar (PRIO, HTB), shaping (retrasa) y policing (descarta)</td></tr>
+<tr><td>Sobredimensionar / MPLS-TE</td><td>Diseño / proveedor</td><td>Más capacidad de la necesaria o ingeniería de tráfico</td></tr></table></div>
+<div class="key"><b>¿Son excluyentes?</b> No: se combinan. Ejemplo: el teléfono marca 802.1p, el switch lo mapea a DSCP y el router de borde aplica colas y shaping con tc.</div>`,
+mcq:[{q:"DiffServ marca el tráfico en el campo:",o:["PCP de 802.1Q","DSCP del encabezado IP","TTL","Puerto TCP"],a:1,e:"802.1p usa PCP en capa 2."},
+{q:"¿Las formas de dar QoS son excluyentes?",o:["Sí, se elige una","No, se combinan en distintas capas","Solo se usa en Internet","Solo en capa 2"],a:1,e:""}],
+dev:[PD.qos]});
+
+addSec("cripto",{h:"Esquema de la firma digital (final 2016)",b:`<p class="tag warn">Salió en el final 2016: “describa y esquematice”</p>
+<pre><code>EMISOR (A)                                   RECEPTOR (B)
+mensaje ─► H() ─► hash                      mensaje ─► H() ─► hash'
+                   │                                           │
+     cifrar con PRIVADA de A                                   ▼
+                   ▼                               ¿hash' == hash?
+                 firma ── mensaje + firma ──►  descifrar firma con
+                                                 PÚBLICA de A ─► hash</code></pre>
+<p>Practicá dibujarlo de memoria: <b>dos hashes</b>, <b>privada del emisor</b> para firmar, <b>pública del emisor</b> para verificar y la <b>comparación</b> al final. Agregá que la pública debe estar respaldada por un certificado X.509 (PKI) o por la red de confianza de PGP.</p>`,
+mcq:[{q:"En el esquema de firma, el receptor necesita:",o:["La privada del emisor","La pública del emisor","Su propia privada","Una clave de sesión"],a:1,e:""}],
+dev:[PD.firma]});
+
+addSec("vpn",{h:"IPsec vs TLS (parcial 2015)",b:`<p class="tag warn">Salió en el 2º parcial 2015: “realice una comparación”</p>
+<div class="tbl"><table><tr><th></th><th>IPsec</th><th>TLS</th></tr>
+<tr><td>Capa</td><td>Red</td><td>Transporte (sobre TCP; DTLS sobre UDP)</td></tr>
+<tr><td>Qué protege</td><td>Todo el tráfico IP entre hosts o redes, transparente a las aplicaciones</td><td>Una conexión de una aplicación que lo implementa</td></tr>
+<tr><td>Implementación</td><td>Núcleo del SO o gateway</td><td>Biblioteca de la aplicación (OpenSSL)</td></tr>
+<tr><td>Componentes</td><td>AH, ESP, SA/SADB/SPD, IKE</td><td>Record, Handshake, Alert, CCS</td></tr>
+<tr><td>Negociación</td><td>IKE (UDP 500), X.509 o PSK, Diffie-Hellman</td><td>Handshake, X.509, (EC)DHE</td></tr>
+<tr><td>Modos</td><td>Transporte y túnel</td><td>—</td></tr>
+<tr><td>NAT</td><td>AH no; ESP con NAT-T (UDP 4500)</td><td>Sin problema</td></tr>
+<tr><td>Usos</td><td>VPN sitio a sitio y acceso remoto</td><td>HTTPS, correo seguro, VPN SSL (OpenVPN)</td></tr></table></div>
+<p><b>En común:</b> confidencialidad, integridad, autenticación del origen y anti-replay; simétrico para los datos y asimétrico para autenticar y acordar claves.</p>`,
+mcq:[{q:"¿Cuál protege todo el tráfico IP sin modificar las aplicaciones?",o:["TLS","IPsec","S/MIME","PGP"],a:1,e:""},
+{q:"TLS, a diferencia de IPsec:",o:["Trabaja en capa de red","Tiene modo túnel y transporte","Lo implementa cada aplicación sobre TCP","No usa certificados"],a:2,e:""}],
+dev:[PD.ipsectls]});
+
+addSec("vpn",{h:"VLAN vs VPN (final 2016)",b:`<p class="tag warn">Salió en el final 2016</p>
+<div class="tbl"><table><tr><th></th><th>VLAN</th><th>VPN</th></tr>
+<tr><td>Qué hace</td><td>Divide lógicamente una LAN en varias redes de capa 2</td><td>Extiende una red privada sobre una red pública</td></tr>
+<tr><td>Cómo</td><td>Etiqueta 802.1Q (VLAN ID de 12 bits, hasta 4094); separa dominios de broadcast</td><td>Túneles con encapsulamiento (IPsec, OpenVPN, WireGuard)</td></tr>
+<tr><td>Seguridad</td><td>Segmenta, pero <b>no cifra</b></td><td>Cifrado, autenticación e integridad</td></tr>
+<tr><td>Alcance</td><td>Infraestructura propia (switches)</td><td>A través de Internet: sucursales y usuarios remotos</td></tr>
+<tr><td>Capa</td><td>2</td><td>2 (tap) o 3 (tun, IPsec)</td></tr></table></div>
+<p>Para comunicar dos VLAN hace falta un router. Se pueden combinar: una VPN puede terminar en una VLAN específica.</p>`,
+mcq:[{q:"Una VLAN, a diferencia de una VPN:",o:["Cifra el tráfico","Segmenta una LAN en capa 2 sin cifrar","Funciona sobre Internet","Usa IKE"],a:1,e:""}],
+dev:[PD.vlanvpn]});
+
+/* SDN: teoría de los parciales */
+addSec("sdn",{h:"Hipervisores tipo I y tipo II puros",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<div class="tbl"><table><tr><th></th><th>Tipo I (nativo, bare-metal)</th><th>Tipo II (hosted)</th></tr>
+<tr><td>Operación</td><td>Corre directamente sobre el hardware en el modo más privilegiado; administra CPU, memoria y dispositivos y los reparte entre las VM</td><td>Es una aplicación sobre un SO anfitrión; las VM son procesos y el hardware se accede con los drivers del anfitrión</td></tr>
+<tr><td>Ejemplos</td><td>VMware ESXi, Xen, Hyper-V, KVM</td><td>VirtualBox, VMware Workstation</td></tr>
+<tr><td>Ventajas</td><td>Rendimiento, aislamiento, seguridad (menos superficie), apto para producción y datacenter</td><td>Fácil de instalar, usa los drivers del anfitrión, ideal para escritorio, pruebas y desarrollo</td></tr>
+<tr><td>Desventajas</td><td>Menos hardware soportado, máquina dedicada, gestión desde otra consola, costo</td><td>Más overhead, depende del SO anfitrión (si cae o se compromete, caen las VM), menos rendimiento</td></tr></table></div>`,
+mcq:[{q:"Un hipervisor tipo I:",o:["Corre como aplicación sobre Windows","Corre directamente sobre el hardware","Es un contenedor","No soporta varias VM"],a:1,e:""},
+{q:"Desventaja típica de un hipervisor tipo II:",o:["Requiere hardware dedicado","Depende del SO anfitrión y tiene más overhead","No se puede instalar en una PC","No soporta Linux"],a:1,e:""}],
+dev:[PD.hipervisores]});
+
+addSec("sdn",{h:"Popek y Goldberg: cuándo se puede virtualizar",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<p>Popek y Goldberg (1974) definieron formalmente cuándo una arquitectura permite construir un <b>Monitor de Máquina Virtual (VMM)</b>.</p>
+<ul><li><b>Instrucciones privilegiadas:</b> generan una <b>trampa</b> si se ejecutan en modo usuario.</li>
+<li><b>Instrucciones sensibles:</b> leen o modifican el estado privilegiado de la máquina (configuración de memoria, interrupciones, modo) o se comportan distinto según él.</li></ul>
+<div class="key"><b>Propiedad:</b> se puede construir un VMM si el conjunto de instrucciones <b>sensibles es un subconjunto de las privilegiadas</b>. Entonces el SO invitado corre en modo usuario y cada instrucción sensible genera una trampa que el VMM <b>atrapa y emula</b> (trap-and-emulate).</div>
+<p><b>Propiedades que debe cumplir el VMM:</b> <b>equivalencia o fidelidad</b> (el programa se comporta igual que en la máquina real), <b>control de recursos o seguridad</b> (el VMM controla todo el hardware) y <b>eficiencia</b> (la mayoría de las instrucciones corren directo en la CPU).</p>
+<p><b>Arquitecturas que no la cumplían (x86):</b> tenían instrucciones sensibles no privilegiadas (por ejemplo POPF o SGDT) que no generaban trampa. Soluciones:</p>
+<div class="tbl"><table><tr><th>Técnica</th><th>Cómo</th><th>Ejemplo</th></tr>
+<tr><td>Traducción binaria</td><td>Reescribe al vuelo el código del kernel invitado y reemplaza las instrucciones problemáticas</td><td>VMware (virtualización completa)</td></tr>
+<tr><td>Paravirtualización</td><td>Se modifica el SO invitado para que llame al hipervisor con <b>hypercalls</b></td><td>Xen</td></tr>
+<tr><td>Asistida por hardware</td><td>La CPU agrega un modo para el hipervisor y hace que esas instrucciones generen trampa</td><td>Intel VT-x, AMD-V (KVM)</td></tr></table></div>`,
+mcq:[{q:"Según Popek y Goldberg, se puede construir un VMM si:",o:["Las instrucciones privilegiadas son subconjunto de las sensibles","Las instrucciones sensibles son subconjunto de las privilegiadas","No hay instrucciones privilegiadas","La CPU tiene más de un núcleo"],a:1,e:"Así toda instrucción sensible genera trampa."},
+{q:"La paravirtualización:",o:["No modifica el SO invitado","Modifica el SO invitado para usar hypercalls","Requiere Intel VT-x","Es lo mismo que un contenedor"],a:1,e:"Xen."},
+{q:"¿Qué técnica usó VMware para virtualizar x86 sin soporte de hardware?",o:["Paravirtualización","Traducción binaria","Contenedores","RSTP"],a:1,e:""},
+{q:"¿Cuál NO es una propiedad del VMM según Popek y Goldberg?",o:["Equivalencia","Control de recursos","Eficiencia","Compresión"],a:3,e:""}],
+fill:[{q:"Técnica en que el VMM atrapa cada instrucción sensible y la emula (en inglés)",a:["trap and emulate","trap-and-emulate"],e:"Trap-and-emulate."}],
+dev:[PD.popek,PD.virtobj]});
+
+addSec("sdn",{h:"Tiers de datacenter: II vs III",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<div class="tbl"><table><tr><th>Tier</th><th>Nombre</th><th>Requerimientos funcionales</th><th>Disponibilidad</th></tr>
+<tr><td>I</td><td>Infraestructura básica</td><td>Sin redundancia; un solo camino; mantenimiento con apagado</td><td>99,671 % (≈ 28,8 h/año)</td></tr>
+<tr><td>II</td><td>Componentes redundantes</td><td>Componentes de capacidad N+1 (UPS, generador, frío), pero <b>un solo camino</b> de distribución; mantener ese camino obliga a apagar</td><td>99,741 % (≈ 22 h/año)</td></tr>
+<tr><td>III</td><td>Mantenible concurrentemente</td><td>N+1 y <b>múltiples caminos</b> de distribución (uno activo); cualquier componente o camino se mantiene <b>sin detener</b> la operación; equipos IT con doble fuente</td><td>99,982 % (≈ 1,6 h/año)</td></tr>
+<tr><td>IV</td><td>Tolerante a fallas</td><td>Caminos activos simultáneos, componentes 2N o 2N+1, compartimentación; soporta una falla sin impacto</td><td>99,995 % (≈ 26 min/año)</td></tr></table></div>
+<div class="key">La diferencia clave entre II y III: el II tiene redundancia de componentes pero un único camino; el III tiene también caminos redundantes y se puede <b>mantener sin cortar</b>.</div>`,
+mcq:[{q:"La característica que distingue a un Tier III de un Tier II es:",o:["Tener UPS","Ser mantenible concurrentemente con múltiples caminos de distribución","Tener aire acondicionado","Usar SDN"],a:1,e:""},
+{q:"Un Tier II tiene:",o:["Caminos activos simultáneos","Componentes redundantes pero un solo camino de distribución","Ninguna redundancia","Tolerancia a fallas"],a:1,e:""}],
+dev:[PD.tiers]});
+
+addSec("sdn",{h:"El switch OpenFlow",b:`<p class="tag warn">Salió en el 2º parcial 2015</p>
+<pre><code>          Controlador (OpenDaylight, ONOS, Ryu)
+                    ▲  protocolo OpenFlow
+                    │  canal seguro (TCP / TLS, puerto 6653)
+   ┌────────────────┴─────────────────┐
+   │  Switch OpenFlow                 │
+   │   Tabla de flujos 0 → 1 → … → n  │
+   │   Tabla de grupos                │
+   └──────────────────────────────────┘</code></pre>
+<p><b>Componentes:</b> una o más <b>tablas de flujo</b> (y una de grupos), el <b>canal seguro</b> (OpenFlow channel) hacia el controlador y el <b>protocolo OpenFlow</b>.</p>
+<div class="tbl"><table><tr><th>Campo de una entrada de flujo</th><th>Para qué</th></tr>
+<tr><td>Match fields</td><td>Puerto de entrada, MAC, VLAN, IP origen/destino, protocolo, puertos TCP/UDP…</td></tr>
+<tr><td>Priority</td><td>Qué entrada gana si varias coinciden</td></tr>
+<tr><td>Counters</td><td>Paquetes y bytes que coincidieron</td></tr>
+<tr><td>Instructions / actions</td><td>Reenviar a un puerto, inundar, enviar al controlador, descartar, modificar campos, ir a otra tabla</td></tr>
+<tr><td>Timeouts</td><td>Idle y hard: cuándo se borra la entrada</td></tr></table></div>
+<p><b>Forma de trabajo:</b> llega un paquete → se busca la entrada de mayor prioridad que coincida → se aplican sus acciones y se actualizan los contadores. Si no coincide ninguna (<b>table-miss</b>), se envía al controlador (<b>packet-in</b>); este decide e instala un flujo (<b>flow-mod</b>) o devuelve el paquete (<b>packet-out</b>). Instalación <b>reactiva</b> (al llegar el primer paquete) o <b>proactiva</b> (de antemano).</p>
+<p><b>Escenario:</b> red SDN de campus, datacenter o laboratorio con un controlador centralizado y switches físicos o virtuales (Open vSwitch).</p>`,
+mcq:[{q:"Cuando un paquete no coincide con ninguna entrada de flujo:",o:["Siempre se descarta","Se envía al controlador (packet-in) o según la regla de table-miss","Se inunda siempre","Se reinicia el switch"],a:1,e:""},
+{q:"El mensaje con el que el controlador instala una entrada de flujo es:",o:["packet-in","flow-mod","BPDU","hello"],a:1,e:""},
+{q:"¿Cuál NO es un componente de un switch OpenFlow?",o:["Tabla de flujos","Canal seguro","Protocolo OpenFlow","Root bridge"],a:3,e:"El root bridge es de STP."}],
+order:[{t:"Ordená el procesamiento en un switch OpenFlow cuando el flujo es nuevo",items:["Llega el paquete al switch","No coincide con ninguna entrada (table-miss)","El switch envía packet-in al controlador","El controlador decide","El controlador envía flow-mod","Los siguientes paquetes coinciden y se reenvían en el switch"]}],
+dev:[PD.openflow]});
+
+/* Preguntas de desarrollo extra en otros módulos */
+M.find(m=>m.id==="tls").dev.push(PD.ipsectls,PD.servicios);
+M.find(m=>m.id==="voip").dev.forEach(d=>{if(/arquitectura de VoIP/.test(d.q))d.ex="Final 2016 · 5"});
+M.find(m=>m.id==="sdn").fuente="Clase del 18/11 todavía sin material. Contenido armado con los temas que tomaron en el 2º parcial 2015 (hipervisores, Popek y Goldberg, Tiers, OpenFlow) y bibliografía general. Ajustalo cuando suban las diapositivas.";
+
+/* Parciales anteriores */
+const PARC=[
+{t:"Segundo parcial · 26/11/2015",nota:"10 preguntas de desarrollo.",q:[PD.servicios,PD.ipsectls,PD.fwidsips,PD.hipervisores,PD.popek,PD.tiers,PD.codec,PD.sipproto,PD.openflow,PD.stp]},
+{t:"Examen final · 04/08/2016",nota:"8 preguntas. Las 1 a 3 son del primer parcial.",q:[PD.fcaps,PD.snmp,PD.diseno,PD.qos,PD.sipproto,PD.vlanvpn,PD.firma,PD.virtobj]}
+];
+
 /* ======================= SIGLAS ======================= */
 /* [sigla, expansión en inglés, explicación en español, contexto/módulo ("gen" = general)] */
 const SIGLAS=[
@@ -1850,6 +2098,24 @@ const SIGLAS=[
 /* contexto adicional para siglas con varios significados */
 SIGLAS.push(["RR","Receiver Report","En RTCP (VoIP): reporte de un receptor con pérdidas y jitter. (En balanceo, RR es Round Robin.)","voip"]);
 
+SIGLAS.push(
+["VMM","Virtual Machine Monitor","Monitor de máquina virtual: otro nombre del hipervisor.","sdn"],
+["BPDU","Bridge Protocol Data Unit","Mensajes que intercambian los switches en STP.","resiliencia"],
+["RSTP","Rapid Spanning Tree Protocol","STP rápido (802.1w): converge en segundos.","resiliencia"],
+["MLAG","Multi-Chassis Link Aggregation","Agregación de enlaces repartida entre dos switches.","resiliencia"],
+["PCP","Priority Code Point","Campo de 3 bits de prioridad en la etiqueta 802.1Q (802.1p).","netfilter"],
+["NIDS","Network-based Intrusion Detection System","IDS que analiza el tráfico de la red (puerto espejo o tap).","seg1"],
+["HIDS","Host-based Intrusion Detection System","IDS instalado en un servidor.","seg1"],
+["PLC","Packet Loss Concealment","Ocultamiento de pérdidas: el códec disimula paquetes perdidos.","voip"],
+["FEC","Forward Error Correction","Corrección de errores hacia adelante: datos redundantes para recuperar pérdidas.","voip"],
+["MIB","Management Information Base","Base de información de gestión de SNMP (objetos con OID).","gen"],
+["OID","Object Identifier","Identificador jerárquico de un objeto de la MIB.","gen"],
+["SMI","Structure of Management Information","Reglas para definir los objetos de la MIB.","gen"],
+["NMS","Network Management System","Estación de gestión (manager) de SNMP.","gen"],
+["PHB","Per-Hop Behavior","Comportamiento por salto que aplica cada router en DiffServ.","netfilter"],
+["RSVP","Resource Reservation Protocol","Reserva de recursos por flujo (IntServ).","netfilter"],
+["TE","Traffic Engineering","Ingeniería de tráfico (MPLS-TE).","netfilter"]);
+
 </script>
 <script>
 /* ======================= MOTOR ======================= */
@@ -1876,14 +2142,14 @@ function itemByKey(key){const [id,code]=key.split(":");const m=M.find(x=>x.id===
 
 (function(){const d=Math.ceil((new Date("2026-11-25T18:00:00-03:00")-new Date())/864e5);document.getElementById("countdown").textContent=d>1?`Faltan ${d} días`:d===1?"Es mañana":d===0?"Es hoy":"Ya pasó"})();
 
-const TABS=[{id:"inicio",t:"Inicio"},...M.map(m=>({id:m.id,n:m.n,t:m.t.split(":")[0],mod:1})),{id:"guia",t:"Guía de estudio"},{id:"siglas",t:"Siglas"},{id:"contrarreloj",t:"Contrarreloj"},{id:"simulacro",t:"Simulacro"},{id:"repaso",t:"Repasar errores"},{id:"faltantes",t:"Qué falta"}];
+const TABS=[{id:"inicio",t:"Inicio"},...M.map(m=>({id:m.id,n:m.n,t:m.t.split(":")[0],mod:1})),{id:"guia",t:"Guía de estudio"},{id:"parciales",t:"Parciales anteriores"},{id:"siglas",t:"Siglas"},{id:"contrarreloj",t:"Contrarreloj"},{id:"simulacro",t:"Simulacro"},{id:"repaso",t:"Repasar errores"},{id:"faltantes",t:"Qué falta"}];
 TABS.forEach(t=>{const b=el(`<button role="tab" data-id="${t.id}">${t.n?`<span class="n">${t.n}</span>`:""}${t.t}${t.mod?'<span class="pc"></span>':""}</button>`);b.onclick=()=>{location.hash=t.id};tabs.appendChild(b)});
 let timers=[];
 function route(){timers.forEach(clearInterval);timers=[];const id=(location.hash||"#inicio").slice(1);const t=TABS.find(x=>x.id===id)?id:"inicio";
   tabs.querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.id===t));
   const a=tabs.querySelector(`[data-id="${t}"]`);if(a)a.scrollIntoView({block:"nearest",inline:"center"});
   view.innerHTML="";
-  ({inicio:renderHome,guia:renderGuia,siglas:renderSiglas,contrarreloj:renderCR,simulacro:renderSim,repaso:renderRepaso,faltantes:renderFalta}[t]||(()=>renderMod(M.find(m=>m.id===t))))();
+  ({inicio:renderHome,parciales:renderParc,guia:renderGuia,siglas:renderSiglas,contrarreloj:renderCR,simulacro:renderSim,repaso:renderRepaso,faltantes:renderFalta}[t]||(()=>renderMod(M.find(m=>m.id===t))))();
   annotate(view);refresh();window.scrollTo(0,0)}
 window.addEventListener("hashchange",route);
 
@@ -1891,6 +2157,7 @@ window.addEventListener("hashchange",route);
 function renderHome(){const s=stat(ALL);const wrong=Object.keys(P).filter(k=>P[k]===0&&!k.includes(":d")&&!k.includes(":x")).length;
   view.appendChild(el(`<div class="mod-head"><h2>Tu avance</h2></div>`));
   view.appendChild(el(`<div class="stats"><div class="stat"><div class="v">${s.pct} %</div><div class="l">del curso completado</div></div><div class="stat"><div class="v">${s.d}/${s.t}</div><div class="l">temas y ejercicios hechos</div></div><div class="stat"><div class="v">${s.acc!==null?s.acc+" %":"—"}</div><div class="l">de aciertos</div></div><div class="stat"><div class="v">${M.filter(m=>P[m.id+":x0"]===1).length}/${M.length}</div><div class="l">exámenes de módulo aprobados</div></div><div class="stat"><div class="v">${wrong}</div><div class="l">errores para repasar</div></div></div>`));
+  view.appendChild(el(`<div class="card miss" style="border-left-color:var(--amber)"><h3 style="color:var(--amber)">Ojo: los parciales son de desarrollo</h3><p>Los parciales anteriores (2015 y final 2016) piden <b>explicar, comparar y esquematizar</b>, no marcar opciones. Usá los juegos para fijar datos, pero practicá sobre todo el paso <b>5 · Desarrollo</b>, la pestaña <b>Parciales anteriores</b> y el <b>parcial escrito</b> del Simulacro.</p></div>`));
   view.appendChild(el(`<div class="card"><h3>Cómo estudiar cada módulo</h3><ol><li><b>Teoría:</b> leé cada tema, respondé su <b>control rápido</b> y marcalo como leído.</li><li><b>Preguntas</b> y <b>Tarjetas:</b> repasá con las respuestas a la vista.</li><li><b>Práctica:</b> multiple choice, verdadero o falso, completar, ¿quién soy?, encontrá el error, ordenar y unir. Si te trabás, usá la <b>pista</b> (el acierto vale la mitad).</li><li><b>Desarrollo:</b> escribí la respuesta como en el parcial y autoevaluate con los puntos clave.</li><li><b>Examen del módulo:</b> 12 preguntas sin pistas. Se aprueba con 6.</li></ol><p>Al final: <b>Contrarreloj</b> para datos duros, <b>Simulacros</b> de 30 preguntas y <b>Repasar errores</b>. El progreso se guarda en este navegador.</p></div>`));
   const g=el(`<div class="grid2"></div>`);
   M.forEach(m=>{const s2=stat(keysOf(m));const ex=store.get("aygr2-exam-"+m.id,null);
@@ -1989,7 +2256,7 @@ function match(x,key,o={}){const c=el(`<div class="quiz"><div class="q">${x.t}</
     if(sel.dataset.i===b.dataset.i)pair(sel,b);else{err++;b.classList.remove("wrong");void b.offsetWidth;b.classList.add("wrong")}};R.appendChild(b)});
   if(o.hint){const h=el(`<button class="hint">Pista: unir un par</button>`);h.onclick=()=>{const a=[...L.querySelectorAll(".chip:not(.done)")][0];if(!a)return;used=true;const b=R.querySelector(`.chip[data-i="${a.dataset.i}"]`);pair(a,b)};c.appendChild(h)}
   return initDone(c,key)}
-function dev(x,key){const c=el(`<div class="quiz"><div class="q">${x.q}</div><textarea placeholder="Escribí tu respuesta como en el parcial…" aria-label="Tu respuesta"></textarea><div class="btns"><button class="btn">Ver respuesta modelo y autoevaluarme</button></div><div class="res"></div></div>`);
+function dev(x,key,o={}){const c=el(`<div class="quiz">${x.ex?`<span class="badge" style="margin-bottom:6px;display:inline-block">${x.ex}</span>`:""}<div class="q">${o.label||""}${x.q}</div><textarea placeholder="Escribí tu respuesta como en el parcial…" aria-label="Tu respuesta"></textarea><div class="btns"><button class="btn">Ver respuesta modelo y autoevaluarme</button></div><div class="res"></div></div>`);
   const ta=c.querySelector("textarea");ta.value=store.get("aygr2-dev-"+key,"");ta.oninput=()=>store.set("aygr2-dev-"+key,ta.value);
   c.querySelector(".btn").onclick=()=>{const res=c.querySelector(".res");if(res.children.length)return;
     res.appendChild(el(`<p class="note" style="margin:10px 0 4px">Marcá los puntos que incluiste en tu respuesta:</p>`));
@@ -2093,10 +2360,29 @@ function renderSiglas(){view.appendChild(el(`<div class="mod-head"><h2>Siglas</h
     area.appendChild(mcq({q:`${i+1}. ¿Qué significa <b>${x[0]}</b>? <span class="note">(${MODNAME[x[3]]})</span>`,o,a:o.indexOf(x[1]),e:x[2]},null,{hint:true}))});area.scrollIntoView({behavior:"smooth"})};
   prac.querySelectorAll(".btn")[1].onclick=()=>{area.innerHTML="";const seen=new Set();const p=shuffle(pool()).filter(x=>!seen.has(x[0])&&seen.add(x[0])).slice(0,6);area.appendChild(match({t:"Uní cada sigla con su versión en inglés",p:p.map(x=>[x[0],x[1]])},null,{hint:true}));area.scrollIntoView({behavior:"smooth"})}}
 
+function renderParc(){view.appendChild(el(`<div class="mod-head"><h2>Parciales anteriores</h2><p class="sub">Preguntas reales de la materia. Escribí tu respuesta, mirá la respuesta modelo y marcá los puntos clave que incluiste.</p></div>`));
+  PARC.forEach((g,gi)=>{view.appendChild(el(`<h3 class="sec-title">${g.t}<span>${g.q.length} preguntas</span></h3>`));view.appendChild(el(`<p class="steps-hint">${g.nota}</p>`));
+    g.q.forEach((x,i)=>{const d=dev({...x,ex:null},"parc:d"+gi+"_"+i,{label:`${i+1}. `});view.appendChild(d)})})}
+function writtenExam(box){box.innerHTML="";const pool=[];const seen=new Set();
+  PARC.forEach(g=>g.q.forEach(x=>{if(!/1er parcial/.test(x.ex||"")&&!seen.has(x.q)){seen.add(x.q);pool.push(x)}}));
+  M.forEach(m=>m.dev.forEach(x=>{if(!seen.has(x.q)){seen.add(x.q);pool.push(x)}}));
+  const qs=shuffle(pool).slice(0,8);const t0=Date.now();
+  const top=el(`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="timer">00:00</span><span class="note">8 preguntas de desarrollo · sin consultar</span></div>`);box.appendChild(top);
+  timers.push(setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);top.querySelector(".timer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")},1000));
+  box.appendChild(el(`<p class="steps-hint">Escribí todas las respuestas primero. Después corregí cada una con la respuesta modelo y tocá “Ver mi nota”.</p>`));
+  const keys=qs.map((x,i)=>"wx:d"+i);keys.forEach(k=>{delete P[k];store.set("aygr2-dev-"+k,"")});
+  qs.forEach((x,i)=>box.appendChild(dev(x,keys[i],{label:`${i+1}. `})));
+  const b=el(`<button class="btn">Ver mi nota</button>`);const res=el(`<div></div>`);box.appendChild(b);box.appendChild(res);
+  b.onclick=()=>{timers.forEach(clearInterval);const vals=keys.map(k=>k in P?P[k]:0);const nota=vals.reduce((a,v)=>a+v,0)/qs.length*10;const s=Math.floor((Date.now()-t0)/1000);
+    res.innerHTML="";res.appendChild(el(`<div class="card ${nota>=6?"read":"miss"}"><h3>Nota estimada: ${fmt(nota)} / 10 · ${nota>=6?"Aprobado":"A seguir practicando"}</h3><p>Tiempo: ${Math.floor(s/60)} min. Las preguntas que no autoevaluaste cuentan como 0. Revisá los puntos clave que te faltaron.</p></div>`));res.scrollIntoView({behavior:"smooth"})}}
+
 /* ---------- Guía, simulacro, repaso, faltantes ---------- */
 function renderGuia(){view.appendChild(el(`<div class="mod-head"><h2>Guía de estudio respondida</h2><p class="sub">Las guías de lectura de las prácticas, las preguntas de las consignas y las que aparecen en las diapositivas, con respuesta modelo.</p></div>`));
   GUIA.forEach(g=>{view.appendChild(el(`<h3 class="sec-title">${g.t}<span>${g.q.length}</span></h3>`));g.q.forEach(([q,a],i)=>view.appendChild(el(`<details class="qa"><summary>${i+1}. ${q}</summary><div class="ans">${a}</div></details>`)))})}
-function renderSim(){view.appendChild(el(`<div class="mod-head"><h2>Simulacro de parcial</h2><p class="sub">30 preguntas al azar de los módulos 01 a 07, sin pistas. Se aprueba con 6.</p></div>`));
+function renderSim(){view.appendChild(el(`<div class="mod-head"><h2>Simulacro de parcial</h2><p class="sub">Dos formatos: el <b>parcial escrito</b> (8 preguntas de desarrollo, como los parciales reales) y el <b>rápido</b> (30 preguntas cerradas).</p></div>`));
+  const wbox=el(`<div class="card"><h3>Parcial escrito</h3><p>8 preguntas de desarrollo al azar, tomadas de los parciales anteriores y de los módulos, con cronómetro y nota estimada por autoevaluación.</p><button class="btn">Empezar parcial escrito</button></div>`);view.appendChild(wbox);
+  wbox.querySelector(".btn").onclick=()=>{const area=el(`<div></div>`);wbox.replaceWith(area);const rest=[...view.children].slice([...view.children].indexOf(area)+1);rest.forEach(n=>n.remove());writtenExam(area)};
+  view.appendChild(el(`<h3 class="sec-title">Simulacro rápido<span>30 preguntas</span></h3>`));
   const pool=[];M.filter(m=>m.id!=="sdn").forEach(m=>["m","v","f","c","w","e"].forEach(c=>m[KT[c]].forEach((_,i)=>pool.push({k:m.id+":"+c+i,mod:m.t}))));
   const qs=shuffle(pool).slice(0,30);let ans=0,ok=0;
   const res=el(`<div class="sim-res"></div>`);const upd=()=>{res.innerHTML=`Respondidas ${ans}/30 · Correctas ${ok}`+(ans===30?` · <b>Nota: ${fmt(ok/3)} / 10 — ${ok>=18?"aprobado":"a seguir practicando"}</b>`:"")};
